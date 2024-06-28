@@ -1,0 +1,40 @@
+// wayland libs
+use wayland_client::{
+    Connection, globals, protocol, Dispatch, QueueHandle
+};
+//helper libs
+use std::process::exit;
+
+struct State{}
+
+impl wayland_client::Dispatch<protocol::wl_registry::WlRegistry, globals::GlobalListContents> for State {
+    fn event(
+        state: &mut State,
+        proxy: &protocol::wl_registry::WlRegistry,
+        event: protocol::wl_registry::Event,
+        // This mutex contains an up-to-date list of the currently known globals
+        // including the one that was just added or destroyed
+        data: &globals::GlobalListContents,
+        conn: &Connection,
+        qhandle: &QueueHandle<State>,
+    ) {
+    }
+}
+
+fn main() {
+    //check if wayland server present
+    let conn = Connection::connect_to_env();
+    if conn.is_err(){
+        println!("Unable to connect due to {:?}", conn.err().unwrap());
+        exit(1);
+    }
+
+    let (global, queue) = globals::registry_queue_init::<State>(&conn.unwrap()).unwrap();
+
+    for item in global.contents().clone_list().iter(){
+        println!("{}\t{}\t{}", item.name, item.interface, item.version);
+    }
+    // Below printed if connected
+    //println!("Connected");
+
+}
